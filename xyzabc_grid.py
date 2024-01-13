@@ -294,6 +294,21 @@ class Script(scripts.Script):
                     c_values = gr.Textbox(label="C values", lines=1, elem_id=self.elem_id("c_values"))
                     fill_c_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_c_tool_button", visible=False)
 
+                with gr.Row():
+                    d_type = gr.Dropdown(label="D type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("d_type"))
+                    d_values = gr.Textbox(label="D values", lines=1, elem_id=self.elem_id("d_values"))
+                    fill_d_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_d_tool_button", visible=False)
+
+                with gr.Row():
+                    e_type = gr.Dropdown(label="E type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("e_type"))
+                    e_values = gr.Textbox(label="E values", lines=1, elem_id=self.elem_id("e_values"))
+                    fill_e_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_e_tool_button", visible=False)
+
+                with gr.Row():
+                    f_type = gr.Dropdown(label="F type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("f_type"))
+                    f_values = gr.Textbox(label="F values", lines=1, elem_id=self.elem_id("f_values"))
+                    fill_f_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_f_tool_button", visible=False)
+
         with gr.Row(variant="compact", elem_id="axis_options"):
             no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
 
@@ -309,6 +324,9 @@ class Script(scripts.Script):
         fill_a_button.click(fn=fill, inputs=[a_type], outputs=[a_values])
         fill_b_button.click(fn=fill, inputs=[b_type], outputs=[b_values])
         fill_c_button.click(fn=fill, inputs=[c_type], outputs=[c_values])
+        fill_d_button.click(fn=fill, inputs=[d_type], outputs=[d_values])
+        fill_e_button.click(fn=fill, inputs=[e_type], outputs=[e_values])
+        fill_f_button.click(fn=fill, inputs=[f_type], outputs=[f_values])
 
         def select_axis(axis_type, axis_values):
             choices = self.current_axis_options[axis_type].choices
@@ -321,27 +339,37 @@ class Script(scripts.Script):
         a_type.change(fn=select_axis, inputs=[a_type, a_values], outputs=[fill_a_button, a_values])
         b_type.change(fn=select_axis, inputs=[b_type, b_values], outputs=[fill_b_button, b_values])
         c_type.change(fn=select_axis, inputs=[c_type, c_values], outputs=[fill_c_button, c_values])
+        d_type.change(fn=select_axis, inputs=[d_type, d_values], outputs=[fill_d_button, d_values])
+        e_type.change(fn=select_axis, inputs=[e_type, e_values], outputs=[fill_e_button, e_values])
+        f_type.change(fn=select_axis, inputs=[f_type, f_values], outputs=[fill_f_button, f_values])
 
         self.infotext_fields = (
-            (x_type, "X Type"),
-            (x_values, "X Values"),
-            (y_type, "Y Type"),
-            (y_values, "Y Values"),
-            (z_type, "Z Type"),
-            (z_values, "Z Values"),
-            (a_type, "A Type"),
-            (a_values, "A Values"),
-            (b_type, "B Type"),
-            (b_values, "B Values"),
-            (c_type, "C Type"),
-            (c_values, "C Values")
+            (x_type, "X Type"), (x_values, "X Values"),
+            (y_type, "Y Type"), (y_values, "Y Values"),
+            (z_type, "Z Type"), (z_values, "Z Values"),
+            (a_type, "A Type"), (a_values, "A Values"),
+            (b_type, "B Type"), (b_values, "B Values"),
+            (c_type, "C Type"), (c_values, "C Values"),
+            (d_type, "D Type"), (d_values, "D Values"),
+            (e_type, "E Type"), (e_values, "E Values"),
+            (f_type, "F Type"), (f_values, "F Values")
         )
 
         # it's a crime they don't let me pack these into some kind of list
-        return [x_type, x_values, y_type, y_values, z_type, z_values, a_type, a_values, b_type, b_values, c_type, c_values, no_fixed_seeds]
+        return [
+            x_type, x_values, 
+            y_type, y_values, 
+            z_type, z_values, 
+            a_type, a_values, 
+            b_type, b_values, 
+            c_type, c_values, 
+            d_type, d_values,
+            e_type, e_values,
+            f_type, f_values,
+            no_fixed_seeds]
 
-    def run(self, p, x_t, x_v, y_t, y_v, z_t, z_v, a_t, a_v, b_t, b_v, c_t, c_v, no_fixed_seeds):
-        axis_setup = [(x_t, x_v), (y_t, y_v), (z_t, z_v), (a_t, a_v), (b_t, b_v), (c_t, c_v)]
+    def run(self, p, x_t, x_v, y_t, y_v, z_t, z_v, a_t, a_v, b_t, b_v, c_t, c_v, d_t, d_v, e_t, e_v, f_t, f_v, no_fixed_seeds):
+        axis_setup = [(x_t, x_v), (y_t, y_v), (z_t, z_v), (a_t, a_v), (b_t, b_v), (c_t, c_v), (d_t, d_v), (e_t, e_v), (f_t, f_v)]
         if not no_fixed_seeds:
             modules.processing.fix_seed(p)
         p.batch_size = 1
