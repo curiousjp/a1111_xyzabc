@@ -3,6 +3,8 @@ from copy import copy
 from itertools import permutations, chain, product
 from functools import reduce
 import random
+import argparse
+import shlex
 import csv
 import os.path
 from io import StringIO
@@ -26,6 +28,22 @@ fill_values_symbol = "\U0001f4d2"  # 📒
 
 AxisInfo = namedtuple('AxisInfo', ['axis', 'values'])
 
+parser = argparse.ArgumentParser(description = 'Parse prompt replacement strings')
+parser.add_argument('--prompt', required=True)
+parser.add_argument('--negative_prompt', required=True)
+
+def prepare_sr_tuple_prompt(xs):
+    valslist = csv_string_to_list_strip(xs)
+    return [(valslist[0], x) for x in valslist[1:]]
+
+def prepare_prompt_replacement(xs):
+    # the namespace objects travel a bit awkwardly
+    results = []
+    for item in xs.split('\n'):
+        pa = parser.parse_args(shlex.split(item)) 
+        results.append((pa.prompt, pa.negative_prompt))
+    return results
+
 def apply_field(field):
     def fun(p, x, xs):
         setattr(p, field, x)
@@ -36,6 +54,17 @@ def apply_prompt(p, x, xs):
         raise RuntimeError(f"Prompt S/R did not find {xs[0]} in prompt or negative prompt.")
     p.prompt = p.prompt.replace(xs[0], x)
     p.negative_prompt = p.negative_prompt.replace(xs[0], x)
+
+def apply_tuple_prompt(p, x, xs):
+    k, v = x
+    if k not in p.prompt and k not in p.negative_prompt:
+        raise RuntimeError(f'Prompt S/R (tuple) did not find {k} in prompt or negative prompt.')
+    p.prompt = p.prompt.replace(k, v)
+    p.negative_prompt = p.negative_prompt.replace(k, v)
+
+def apply_prompt_replacement(p, x, xs):
+    p.prompt = x[0]
+    p.negative_prompt = x[1]
 
 def apply_order(p, x, xs):
     token_order = []
@@ -202,6 +231,8 @@ axis_options = [
     AxisOption("CFG Scale", float, apply_field("cfg_scale")),
     AxisOptionImg2Img("Image CFG Scale", float, apply_field("image_cfg_scale")),
     AxisOption("Prompt S/R", str, apply_prompt, format_value=format_value),
+    AxisOption("Prompt S/R (skip first)", tuple, apply_tuple_prompt, prepare=prepare_sr_tuple_prompt, format_value=format_value),
+    AxisOption("Prompt Replacement", tuple, apply_prompt_replacement, prepare=prepare_prompt_replacement, format_value=format_value),
     AxisOption("Prompt order", str_permutations, apply_order, format_value=format_value_join_list),
     AxisOptionTxt2Img("Sampler", str, apply_field("sampler_name"), format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers if x.name not in opts.hide_samplers]),
     AxisOptionTxt2Img("Hires sampler", str, apply_field("hr_sampler_name"), confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers_for_img2img if x.name not in opts.hide_samplers]),
