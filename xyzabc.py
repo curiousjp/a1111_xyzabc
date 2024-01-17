@@ -55,6 +55,14 @@ def apply_prompt(p, x, xs):
     p.prompt = p.prompt.replace(xs[0], x)
     p.negative_prompt = p.negative_prompt.replace(xs[0], x)
 
+def apply_global_reweight(p, x, xs, and_negative = True):
+    p.prompt = f'({p.prompt}:{x})'
+    if and_negative:
+        p.negative_prompt = f'({p.negative_prompt}:{x})'
+
+def apply_global_reweight_positive(p, x, xs):
+    apply_global_reweight(p, x, xs, and_negative = False)
+
 def apply_tuple_prompt(p, x, xs):
     k, v = x
     if k not in p.prompt and k not in p.negative_prompt:
@@ -235,6 +243,8 @@ axis_options = [
     AxisOption("Prompt S/R (skip first)", tuple, apply_tuple_prompt, prepare=prepare_sr_tuple_prompt, format_value=format_value),
     AxisOption("Prompt Replacement", tuple, apply_prompt_replacement, prepare=prepare_prompt_replacement, format_value=format_value),
     AxisOption("Prompt order", str_permutations, apply_order, format_value=format_value_join_list),
+    AxisOption("Global Prompt Reweight", float, apply_global_reweight),
+    AxisOption("Global Prompt Reweight (Positive Only)", float, apply_global_reweight_positive),
     AxisOptionTxt2Img("Sampler", str, apply_field("sampler_name"), format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers if x.name not in opts.hide_samplers]),
     AxisOptionTxt2Img("Hires sampler", str, apply_field("hr_sampler_name"), confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers_for_img2img if x.name not in opts.hide_samplers]),
     AxisOptionImg2Img("Sampler", str, apply_field("sampler_name"), format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers_for_img2img if x.name not in opts.hide_samplers]),

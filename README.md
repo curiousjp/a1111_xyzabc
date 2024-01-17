@@ -18,6 +18,14 @@ The original Prompt S/R includes the base case - applying an argument of `ANIMAL
 
 This variant omits the first example, making it safe to use meaninglessly named variable names in your search and replace operations.
 
+### Global Prompt Reweight and Global Prompt Reweight (Positive Only)
+Wraps the entire prompt (either the positive prompt only, or both) in a grouping operator, and then weights it according to the provided values, using the normal syntax for floating point arguments. For example, a prompt `beautiful, masterpiece, best quality, perfect lighting, night, landscape, (no humans),  advntr` and argument of `1.0-1.5 [3]` would create the following prompts:
+* `(beautiful, masterpiece, best quality, perfect lighting, night, landscape, (no humans), advntr:1.0)`
+* `(beautiful, masterpiece, best quality, perfect lighting, night, landscape, (no humans), advntr:1.25)`
+* `(beautiful, masterpiece, best quality, perfect lighting, night, landscape, (no humans), advntr:1.5)`
+
+Useful for probing the burn-out points of combinations of LORA or embeddings.
+
 ### Prompt Replacement
 Accepts an attenuated form of the 'prompts from file' style format, replacing the positive and negative prompts in their entirety (styles are still preserved unless otherwise displaced). For example,
 ```
