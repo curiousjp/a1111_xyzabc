@@ -204,7 +204,7 @@ def list_to_csv_string(data_list):
         return o.getvalue().strip()
 
 def csv_string_to_list_strip(data_str):
-    return list(map(str.strip, chain.from_iterable(csv.reader(StringIO(data_str)))))
+    return [x for x in list(map(str.strip, chain.from_iterable(csv.reader(StringIO(data_str))))) if x]
 
 class AxisOption:
     def __init__(self, label, type, apply, format_value=format_value_add_label, confirm=None, cost=0.0, choices=None, prepare=None):
