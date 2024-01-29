@@ -31,17 +31,21 @@ AxisInfo = namedtuple('AxisInfo', ['axis', 'values'])
 parser = argparse.ArgumentParser(description = 'Parse prompt replacement strings')
 parser.add_argument('--prompt', required=True)
 parser.add_argument('--negative_prompt', default=None)
+parser.add_argument('--cfg_scale', type = float, default=None)
+parser.add_argument('--seed', type = int, default=None)
+parser.add_argument('--steps', type = int, default=None)
 
 def prepare_sr_tuple_prompt(xs):
     valslist = csv_string_to_list_strip(xs)
     return [(valslist[0], x) for x in valslist[1:]]
 
 def prepare_prompt_replacement(xs):
-    # the namespace objects travel a bit awkwardly
+    # the namespace objects travel a bit awkwardly, 
+    # so we turn them into dictionaries
     results = []
     for item in xs.split('\n'):
         pa, unknown = parser.parse_known_args(shlex.split(item)) 
-        results.append((pa.prompt, pa.negative_prompt))
+        results.append(vars(pa))
     return results
 
 def apply_field(field):
@@ -71,9 +75,9 @@ def apply_tuple_prompt(p, x, xs):
     p.negative_prompt = p.negative_prompt.replace(k, v)
 
 def apply_prompt_replacement(p, x, xs):
-    p.prompt = x[0]
-    if x[1]:
-        p.negative_prompt = x[1]
+    for k, v in x.items():
+        if v:
+            setattr(p, k, v)
 
 def apply_order(p, x, xs):
     token_order = []
@@ -241,7 +245,7 @@ axis_options = [
     AxisOptionImg2Img("Image CFG Scale", float, apply_field("image_cfg_scale")),
     AxisOption("Prompt S/R", str, apply_prompt, format_value=format_value),
     AxisOption("Prompt S/R (skip first)", tuple, apply_tuple_prompt, prepare=prepare_sr_tuple_prompt, format_value=format_value),
-    AxisOption("Prompt Replacement", tuple, apply_prompt_replacement, prepare=prepare_prompt_replacement, format_value=format_value),
+    AxisOption("Prompt Replacement", dict, apply_prompt_replacement, prepare=prepare_prompt_replacement, format_value=format_value),
     AxisOption("Prompt order", str_permutations, apply_order, format_value=format_value_join_list),
     AxisOption("Global Prompt Reweight", float, apply_global_reweight),
     AxisOption("Global Prompt Reweight (Positive Only)", float, apply_global_reweight_positive),
