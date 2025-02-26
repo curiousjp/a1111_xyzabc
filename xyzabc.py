@@ -109,6 +109,16 @@ def apply_checkpoint(p, x, xs):
         raise RuntimeError(f"Unknown checkpoint: {x}")
     p.override_settings['sd_model_checkpoint'] = info.name
 
+def apply_checkpoint_with_style(p, x, xs):
+    apply_checkpoint(p, x, xs)
+    style_name = p.override_settings['sd_model_checkpoint']
+    if style_name.endswith('.safetensors'):
+        style_name = style_name[:-12]
+    if style_name in shared.prompt_styles.styles:
+        p.styles.extend([style_name])
+    else:
+        print( f' xx Could not find a style called {style_name}')
+
 def confirm_checkpoints(p, xs):
     for x in xs:
         if modules.sd_models.get_closet_checkpoint_match(x) is None:
@@ -253,6 +263,7 @@ axis_options = [
     AxisOptionTxt2Img("Hires sampler", str, apply_field("hr_sampler_name"), confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers_for_img2img if x.name not in opts.hide_samplers]),
     AxisOptionImg2Img("Sampler", str, apply_field("sampler_name"), format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers_for_img2img if x.name not in opts.hide_samplers]),
     AxisOption("Checkpoint name", str, apply_checkpoint, format_value=format_remove_path, confirm=confirm_checkpoints, cost=1.0, choices=lambda: sorted(sd_models.checkpoints_list, key=str.casefold)),
+    AxisOption("Checkpoint name and matching style", str, apply_checkpoint_with_style, format_value=format_remove_path, confirm=confirm_checkpoints, cost=1.0, choices=lambda: sorted(sd_models.checkpoints_list, key=str.casefold)),
     AxisOption("Negative Guidance minimum sigma", float, apply_field("s_min_uncond")),
     AxisOption("Sigma Churn", float, apply_field("s_churn")),
     AxisOption("Sigma min", float, apply_field("s_tmin")),
@@ -532,6 +543,12 @@ class Script(scripts.Script):
             for i in range(len(axis_values)):
                 axis_type = axis_setup[i][0]
                 axis_value = axis_values[i]
+                
+                # have noticed that on forge, occasionally successive -1 seeds return the same value
+                # no idea what could be causing this - so have snuck this quite weird workaround in here
+                if axis_value == -2 and axis_type.label in ['Seed', 'Var. seed']:
+                    axis_value = int(random.randrange(4294967294))
+                
                 axis_all_values = axis_setup[i][2]
                 print(f' ** {axis_type.label}: {axis_value}')
                 axis_type.apply(pc, axis_value, axis_all_values)
