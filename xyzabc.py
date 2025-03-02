@@ -39,6 +39,19 @@ def prepare_sr_tuple_prompt(xs):
     valslist = csv_string_to_list_strip(xs)
     return [(valslist[0], x) for x in valslist[1:]]
 
+def prepare_sr_dict_prompt(xs):
+    import json
+    varlist = json.loads(xs.strip())
+    if isinstance(varlist, dict):
+        return [varlist]
+    elif isinstance(varlist, list):
+        for item in varlist:
+            if not isinstance(item, dict):
+                raise RuntimeError(f"Prompt S/R (dict) found a non-dictionary item {item} in the list of dictionaries {xs}.")
+        return varlist
+    else:
+        raise RuntimeError(f"Prompt S/R (dict) must receive a single dictionary or list of dictionaries, not {xs}.")
+
 def prepare_prompt_replacement(xs):
     # the namespace objects travel a bit awkwardly, 
     # so we turn them into dictionaries
@@ -73,6 +86,16 @@ def apply_tuple_prompt(p, x, xs):
         raise RuntimeError(f'Prompt S/R (tuple) did not find {k} in prompt or negative prompt.')
     p.prompt = p.prompt.replace(k, v)
     p.negative_prompt = p.negative_prompt.replace(k, v)
+
+def apply_dict_prompt(p, x, xs):
+    import random
+    for k, v in x.items():
+        if k not in p.prompt and k not in p.negative_prompt:
+            raise RuntimeError(f'Prompt S/R (dict) did not find {k} in prompt or negative prompt.')
+        if isinstance(v, list):
+            v = random.choice(v)
+        p.prompt = p.prompt.replace(k, v)
+        p.negative_prompt = p.negative_prompt.replace(k, v)
 
 def apply_prompt_replacement(p, x, xs):
     for k, v in x.items():
@@ -255,6 +278,7 @@ axis_options = [
     AxisOptionImg2Img("Image CFG Scale", float, apply_field("image_cfg_scale")),
     AxisOption("Prompt S/R", str, apply_prompt, format_value=format_value),
     AxisOption("Prompt S/R (skip first)", tuple, apply_tuple_prompt, prepare=prepare_sr_tuple_prompt, format_value=format_value),
+    AxisOption("Prompt S/R (by dictionary)", dict, apply_dict_prompt, prepare=prepare_sr_dict_prompt, format_value=format_value),
     AxisOption("Prompt Replacement", dict, apply_prompt_replacement, prepare=prepare_prompt_replacement, format_value=format_value),
     AxisOption("Prompt order", str_permutations, apply_order, format_value=format_value_join_list),
     AxisOption("Global Prompt Reweight", float, apply_global_reweight),
